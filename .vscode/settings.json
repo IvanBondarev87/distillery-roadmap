@@ -1,0 +1,42 @@
+{
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  "emmet.triggerExpansionOnTab": true,
+  
+  "eslint.format.enable": true,
+  
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  },
+
+  "explorer.autoReveal": false,
+  "explorer.compactFolders": false,
+
+  "files.exclude": {
+    "node_modules": true,
+    ".chrome": true,
+  },
+
+  "editor.tokenColorCustomizations": {
+    "[Default Dark+]": {
+      "textMateRules": [
+        {
+          "scope": ["variable.other.constant", "variable.other.enummember"],
+          "settings": {
+              "foreground": "#9cdcfe"
+          }
+        }
+      ]
+    }
+  },
+}
