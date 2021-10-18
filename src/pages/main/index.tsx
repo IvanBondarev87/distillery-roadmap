@@ -1,6 +1,6 @@
 import * as validators from './validators';
 
-function FormExample() {
+function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) => void }) {
 
   const [initialValues, setInitialValues] = useState({
     lastname: 'Cooper',
@@ -8,8 +8,9 @@ function FormExample() {
     gender: 'male'
   });
 
-  const onSubmit = async ({ values }) => {
+  const handleSubmit = async ({ values }) => {
     console.log(values);
+    onSubmit?.(values);
     if (values.firstname === 'John') return {
       firstname: `Name 'John' already reserved`,
       [FORM_ERROR]: `Failed to submit form`
@@ -19,7 +20,7 @@ function FormExample() {
 
   return <Box padding={1}>
 
-    <Form onSubmit={onSubmit} initialValues={initialValues}>
+    <Form onSubmit={handleSubmit} initialValues={initialValues}>
 
       <FlexBox spacing={1}>
         <TextField label="Firstname*" name="firstname" validate={validators.name} />
