@@ -23,9 +23,14 @@
 
 const path = require('path')
 const indectDevServer = require('@cypress/react/plugins/load-webpack');
+// const { initPlugin } = require('cypress-plugin-snapshots/plugin');
 
 module.exports = (on, config) => {
-  const webpackFilename = path.resolve(__dirname, '../../webpack.config.js');
+
+  const webpackFilename = path.resolve(__dirname, '../webpack.config.js');
   indectDevServer(on, config, { webpackFilename });
+
+  // initPlugin(on, config);
+
   return config;
 }

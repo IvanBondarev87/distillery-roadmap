@@ -86,6 +86,9 @@ module.exports = _env => {
     resolve: {
       modules: [path.resolve(__dirname, './src'), 'node_modules'],
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      fallback: {
+        path: require.resolve('path-browserify')
+      },
     },
 
     output: {

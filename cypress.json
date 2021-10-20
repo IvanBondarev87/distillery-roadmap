@@ -3,5 +3,10 @@
     "testFiles": "**/*.test.{js,ts,jsx,tsx}",
     "componentFolder": "src"
   },
-  "port": 5000
+  "port": 5000,
+  "ignoreTestFiles": [
+    "**/__snapshots__/*",
+    "**/__image_snapshots__/*"
+  ],
+  "snapshotFileName": "./cypress/snapshots.js"
 }

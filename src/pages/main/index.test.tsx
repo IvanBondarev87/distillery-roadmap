@@ -130,14 +130,20 @@ describe('Submission behavior', () => {
   it('Submit handler should be called with the entered values', () => {
     fillOutForm();
     cy.get('#submit').click().then(() => {
-      cy.get('@handleSubmit').then(handleSubmit => {
-        expect(handleSubmit).to.be.calledWith({
-          firstname: 'John',
-          lastname: 'Cooper',
-          gender: 'male',
-          badHabbits: ['rock-n-roll'],
-          wishlist: ['eat', 'drink', 'sleep']
-        });
+      // cy.get('@handleSubmit').then(handleSubmit => {
+      //   expect(handleSubmit).to.be.calledWith({
+      //     firstname: 'John',
+      //     lastname: 'Cooper',
+      //     gender: 'male',
+      //     badHabbits: ['rock-n-roll'],
+      //     wishlist: ['eat', 'drink', 'sleep']
+      //   });
+      // });
+      cy.get<Cypress.Agent<sinon.SinonStub>>('@handleSubmit').then((handleSubmit) => {
+        const values = handleSubmit.getCall(0).args[0];
+        // @ts-ignore
+        cy.wrap(values).snapshot();
+        // cy.wrap(values).toMatchSnapshot();
       });
     });
   });
