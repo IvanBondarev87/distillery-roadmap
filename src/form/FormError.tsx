@@ -1,3 +1,4 @@
+import { TypographyProps } from '@material-ui/core';
 import { FormSubscription } from 'final-form';
 import useFormState from './useFormState';
 
@@ -7,11 +8,10 @@ const subscription: FormSubscription = {
   submitFailed: true,
 };
 
-interface FormErrorProps {
-  component?: 'div' | 'span'
+interface FormErrorProps extends TypographyProps {
 }
 
-function FormError({ component: Component }: FormErrorProps) {
+function FormError(props: FormErrorProps) {
 
   const { error, submitError, submitFailed } = useFormState(subscription);
 
@@ -20,7 +20,7 @@ function FormError({ component: Component }: FormErrorProps) {
 
   return displayError
     ? (
-      <P component={Component} color="error">
+      <P {...props} color="error">
         {error || submitError}
       </P>
     ) : null;

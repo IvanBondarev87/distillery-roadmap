@@ -12,8 +12,8 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
     console.log(values);
     onSubmit?.(values);
     if (values.firstname === 'John') return {
-      firstname: `Name 'John' already reserved`,
-      [FORM_ERROR]: `Failed to submit form`
+      firstname: `Name 'John' is already reserved`,
+      [FORM_ERROR]: `Failed to submit the form`
     };
     setInitialValues(values);
   };
@@ -23,16 +23,16 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
     <Form onSubmit={handleSubmit} initialValues={initialValues}>
 
       <FlexBox spacing={1}>
-        <TextField label="Firstname*" name="firstname" validate={validators.name} />
-        <TextField label="Lastname*" name="lastname" validate={validators.name} />
+        <TextField id="firstname" label="Firstname*" name="firstname" validate={validators.name} />
+        <TextField id="firstname" label="Lastname*" name="lastname" validate={validators.name} />
       </FlexBox>
 
       <br />
       <Field name="gender" validate={validators.gender}>
         <FlexBox spacing={1} alignItems="center">
           <P>Gender*:</P>
-          <Radio label="Male" value="male" />
-          <Radio label="Female" value="female" />
+          <Radio id="male" label="Male" value="male" />
+          <Radio id="female" label="Female" value="female" />
         </FlexBox>
         <FieldError />
       </Field>
@@ -41,9 +41,9 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
       <Field name="badHabbits" validate={validators.badHabbits}>
         <FlexBox spacing={1} alignItems="center">
           <P>Bad habbits:</P>
-          <Checkbox label="Alcohol" value="alcohol" />
-          <Checkbox label="Smoking" value="smoking" />
-          <Checkbox label="I like to rock'n'roll" value="i like to rock'n'roll" />
+          <Checkbox id="alcohol" label="Alcohol" value="alcohol" />
+          <Checkbox id="smoking" label="Smoking" value="smoking" />
+          <Checkbox id="rock-n-roll" label="I like to rock'n'roll" value="rock-n-roll" />
         </FlexBox>
         <FieldError />
       </Field>
@@ -55,7 +55,7 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
 
           {map(index => (
             <FlexBox alignItems="center" spacing={1} key={index}>
-              <TextField label={'Wish ' + index} name={`wishlist[${index}]`} />
+              <TextField id={`wish-${index}`} label={'Wish ' + index} name={`wishlist[${index}]`} />
               <Button size="small" onClick={() => remove(index)}>Delete</Button>
             </FlexBox>
           ))}
@@ -63,7 +63,7 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
           <FieldError name="wishlist" />
           <br />
           <div>
-            <Button size="small" onClick={() => push(null)}>Add more wish</Button>
+            <Button id="add-wish" size="small" onClick={() => push(null)}>Add wish</Button>
           </div>
 
         </>}
@@ -73,12 +73,12 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
       <Checkbox label="Are you sure" name="sure" />
 
       <br />
-      <FormError />
+      <FormError id="form-error" />
 
       <br />
       <FlexBox spacing={1}>
-        <ResetButton />
-        <SubmitButton disablePristine={false} />
+        <ResetButton id="reset" />
+        <SubmitButton disablePristine={false} id="submit" />
       </FlexBox>
 
     </Form>
