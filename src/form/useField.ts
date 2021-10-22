@@ -61,12 +61,16 @@ function useField<Value>(name: string, config: UseFieldConfig<Value>) {
   current.name = name;
 
   const { change, blur } = current;
+  
+  const derivedFieldState = (
+    fieldState
+    ?? form.getFieldState(name)
+    ?? { value: getIn(form.getState().values, name) }
+  ) as FieldState<Value>;
+  
   return {
-    ...(
-      fieldState
-      ?? form.getFieldState(name)
-      ?? { value: getIn(form.getState().values, name) }
-    ) as FieldState<Value>,
+    ...derivedFieldState,
+    length: derivedFieldState?.length ?? (derivedFieldState.value as unknown as any[])?.length,
     change,
     blur,
   };

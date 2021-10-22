@@ -1,4 +1,4 @@
-import { FieldSubscription, FieldState, ARRAY_ERROR } from 'final-form';
+import { FieldSubscription, FieldState, ARRAY_ERROR, getIn } from 'final-form';
 import type { Mutators as ArrayMutators } from 'final-form-arrays';
 import { useForm } from './FormContext';
 import { useFormProps } from './FormPropsContext';
@@ -39,7 +39,10 @@ function useFieldArray<Value>(name: string, config: UseFieldArrayConfig<Value>) 
 
   const map = useCallback(
     (callback: (index: number) => any) => {
-      const { value: values }: FieldState<Value[]> = form.getFieldState(name) ?? Object();
+      const { value: values }: FieldState<Value[]> =
+        form.getFieldState(name)
+        ?? { value: getIn(form.getState().values, name) }
+        ?? Object();
       return (values ?? []).map((value, index) => callback(index));
     },
     [name]
