@@ -9,6 +9,7 @@ const dotenv = require('dotenv').config({
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const ReactRefreshTypeScript = require('react-refresh-typescript');
 const tsProvide = require('./ts-provide');
+const ssrMiddleware = require('./ssrMiddleware');
 
 module.exports = _env => {
   const dev = !process.argv.includes('--mode=production');
@@ -142,6 +143,9 @@ module.exports = _env => {
         progress: true,
       },
       hot: true,
+      onBeforeSetupMiddleware: ({ app }) => {
+        app.use((...args) => ssrMiddleware(env, ...args));
+      },
       // static: {
       //   publicPath: '/',
       // },

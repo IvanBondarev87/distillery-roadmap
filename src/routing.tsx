@@ -3,17 +3,24 @@ import { Suspense } from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { lazy } from 'utils';
 
-const Main = lazy(() => import('./pages/main'));
+// const Main = lazy(() => import('./pages/main'));
+import Main from './pages/main';
 
 const Routing = () => {
 
+  // return (
+  //   <Suspense fallback={<></>}>
+  //     <Switch>
+  //       <Route exact path="/" component={Main} />
+  //       <Route component={NotFound} />
+  //     </Switch>
+  //   </Suspense>
+  // );
   return (
-    <Suspense fallback={<></>}>
-      <Switch>
-        <Route exact path="/" component={Main} />
-        <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+    <Switch>
+      <Route exact path="/" component={Main} />
+      <Route component={NotFound} />
+    </Switch>
   );
 };
 

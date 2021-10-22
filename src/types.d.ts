@@ -7,3 +7,7 @@ type SelectValue<Multiple extends boolean> = Multiple extends true
 type SelectOption = string | number | Record<string, any>;
 
 type QueryParams = import('query-string').ParsedQuery<string | number | boolean>;
+
+interface Window {
+  prerendered: boolean
+}

@@ -45,7 +45,7 @@ function FlexBox(props: FlexBoxProps) {
         {griItems}
       </Grid>
     </Box>
-  )
+  );
 }
 
 export default FlexBox;
