@@ -18,11 +18,19 @@ if (!window.prerendered) {
   document.getElementById('main-container').innerHTML = ReactDOMServer.renderToString(main);
 } else {
   window.addEventListener('DOMContentLoaded', () => {
-    ReactDOM.hydrate(main, document.getElementById('main-container'));   
+    const serverStyleElements = document.head.querySelectorAll<HTMLStyleElement>('[data-jss]');
+    ReactDOM.hydrate(
+      main,
+      document.getElementById('main-container'),
+      () => {
+        for (const styleEl of serverStyleElements) {
+          document.head.removeChild(styleEl);
+        }
+      }
+    );
     // setTimeout(() => {
     //   console.log('hydrate');
     //   ReactDOM.hydrate(main, document.getElementById('main-container'));
     // }, 2000);
   });
 }
-
