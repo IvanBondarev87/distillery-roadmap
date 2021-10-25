@@ -7,7 +7,13 @@ const dotenv = require('dotenv').config({
 });
 
 async function bootstrap() {
-  const browser = await puppeteer.launch({ headless: true });
+  const browserOpts = {};
+  
+  if (process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD) {
+    browserOpts.executablePath = 'google-chrome-stable';
+    browserOpts.args = ['--no-sandbox'];
+  };
+  const browser = await puppeteer.launch({ ...browserOpts, headless: true  });
   const pep = browser.wsEndpoint();
   const pepOpt = `--env pep=${pep}`;
   
