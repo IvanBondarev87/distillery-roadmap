@@ -16,6 +16,7 @@ module.exports = _env => {
 
   const env = {
     port: 3000,
+    host: 'localhost',
     ...dotenv.parsed,
     ..._env,
   };
@@ -136,6 +137,7 @@ module.exports = _env => {
     },
 
     devServer: {
+      allowedHosts: ['distillery-roadmap-app.herokuapp.com'],
       port: env.port,
       host: env.host,
       historyApiFallback: true,

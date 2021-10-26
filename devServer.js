@@ -7,6 +7,15 @@ const dotenv = require('dotenv').config({
 });
 
 async function bootstrap() {
+  let { port = 3000, host = 'localhost' } = {
+    ...dotenv.parsed,
+    ...process.env,
+  };
+  if (process.argv[2] === '--deploy') {
+    port = process.argv[3];
+    host = process.argv[4];
+  }
+
   const browserOpts = {};
   
   if (process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD) {
@@ -16,14 +25,9 @@ async function bootstrap() {
   const browser = await puppeteer.launch({ ...browserOpts, headless: true  });
   const pep = browser.wsEndpoint();
   const pepOpt = `--env pep=${pep}`;
-  
-  const { port = 3000 } = {
-    ...dotenv.parsed,
-    ...process.env,
-  };
 
   nodemon({
-    exec: `npx webpack serve ${pepOpt}`,
+    exec: `npx webpack serve ${pepOpt} --env port=${port} --env host=${host}`,
     watch: [
       'tsconfig.json',
       'webpack.config.js',
