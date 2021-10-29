@@ -16,7 +16,7 @@
     "noImplicitAny": false,
 
     "outDir": "dist",
-    "module": "esnext",
+    "module": "CommonJS",
     "target": "ES2015",
     "esModuleInterop": true,
     "moduleResolution": "node",

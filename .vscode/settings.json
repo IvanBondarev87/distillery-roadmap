@@ -4,20 +4,31 @@
 
   "emmet.triggerExpansionOnTab": true,
   
-  "eslint.format.enable": true,
+  // "eslint.format.enable": true,
+  // "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   
-  "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  },
+  // "[javascript]": {
+  //   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // },
+  // "[javascriptreact]": {
+  //   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // },
+  // "[typescriptreact]": {
+  //   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // },
+  // "[typescript]": {
+  //   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // },
+  // "eslint.probe": [
+  //   "javascript",
+  //   "javascriptreact",
+  //   "typescript",
+  //   "typescriptreact",
+  //   "html",
+  //   "vue",
+  //   "markdown",
+  //   "json"
+  // ],
 
   "explorer.autoReveal": false,
   "explorer.compactFolders": false,
