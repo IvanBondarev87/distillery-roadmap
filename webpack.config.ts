@@ -37,7 +37,7 @@ function configureWebpack(options: ConfigureOptions): WebpackOptions {
   };
 
   return {
-    mode: production ? 'development' : 'production',
+    mode: production ? 'production' : 'development',
     devtool: production ? undefined : 'source-map',
     target: 'web',
 
@@ -92,6 +92,8 @@ function configureWebpack(options: ConfigureOptions): WebpackOptions {
       new HtmlWebpackPlugin({
         template: './src/index.html',
         title: process.env.APP_NAME,
+        filename: 'index-raw.html',
+        // scriptLoading: 'blocking',
       }),
 
       new EnvironmentPlugin(process.env),

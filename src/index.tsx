@@ -16,6 +16,9 @@ const main = (
 if (!window.prerendered) {
   // ReactDOM.render(main, document.getElementById('main-container'));
   document.getElementById('main-container').innerHTML = ReactDOMServer.renderToString(main);
+  const script = document.createElement('script');
+  script.innerText = 'window.prerendered = true;'
+  document.body.appendChild(script);
 } else {
   window.addEventListener('DOMContentLoaded', () => {
     const serverStyleElements = document.head.querySelectorAll<HTMLStyleElement>('[data-jss]');

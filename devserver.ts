@@ -1,31 +1,26 @@
 import fs from 'fs';
 import path from 'path';
-import { RequestHandler } from 'express';
 import dotenv from 'dotenv';
-import chokidar from 'chokidar';
 import webpack from 'webpack';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import WebpackDevServer, { Configuration as DevServerOptions } from 'webpack-dev-server';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import ReactRefreshTypeScript from 'react-refresh-typescript';
-import puppeteer, { Browser } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import configureWebpack from './webpack.config';
-import createSSRMiddleware from './createSSRMiddleware';
+// import { WebpackDevMiddleware } from 'webpack-dev-middleware';
 
-let server: WebpackDevServer;
+async function bootstrap() {
 
-const initialEnv = process.env;
-
-let browser: Browser;
-let ssrMiddleware: RequestHandler;
-
-async function startServer() {
-
-  if (browser === undefined) {
-    browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    ssrMiddleware = createSSRMiddleware(page);
-  }
+  const browser = await puppeteer.launch({
+    headless: false,
+    executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+    args: [
+      '--profile-directory=render-profile',
+    ],
+  });
+  const page = (await browser.pages())[0];
+  await page.setRequestInterception(true);
 
   process.env = {
     HOST: 'localhost',
@@ -33,13 +28,12 @@ async function startServer() {
     ...dotenv.parse(
       fs.readFileSync(path.join(__dirname, '.env'))
     ),
-    ...initialEnv,
+    ...process.env,
   };
 
   const webpackOptions = configureWebpack({
-    // @ts-expect-error
     getCustomTransformers: () => ({
-      before: ReactRefreshTypeScript(),
+      before: [ReactRefreshTypeScript()],
     }),
     styleLoader: MiniCssExtractPlugin.loader,
     plugins: [
@@ -47,8 +41,18 @@ async function startServer() {
       new ReactRefreshWebpackPlugin(),
     ],
   });
-  
+
   const compiler = webpack(webpackOptions);
+
+  page.on('request', request => {
+    if (request.resourceType() === 'document')
+      request.respond({
+        // @ts-expect-error
+        body: compiler.outputFileSystem.readFileSync(path.join(compiler.outputPath, 'index-raw.html')).toString(),
+      });
+    else
+      request.continue();
+  });
 
   const devServerOptions: DevServerOptions = {
     host: process.env.HOST,
@@ -58,33 +62,23 @@ async function startServer() {
       progress: true,
     },
     hot: true,
-    onBeforeSetupMiddleware: ({ app }) => {
-      app.use(ssrMiddleware);
-    },
+    onAfterSetupMiddleware: ({ app }) => {
+      app.use(async (req, res, next) => {
+        if (req.url === '/index.html') {
+          await page.goto('http://' + process.env.HOST + ':' + process.env.PORT + req.originalUrl, { waitUntil: 'domcontentloaded' });
+          const prerenderedHtml = await page.content();
+          res.send(prerenderedHtml);
+        }
+        next();
+      });
+    }
   };
-  
-  server = new WebpackDevServer(devServerOptions, compiler);
 
+  const server = new WebpackDevServer(devServerOptions, compiler);
   await server.start();
 };
 
-startServer();
-
-const watcher = chokidar.watch([
-  'tsconfig.json',
-  'webpack.config.ts',
-  'createSSRMiddleware.ts',
-  '.env',
-]);
-
-watcher.on('change', async () => {
-  await server.stop();
-  startServer();
-});
-
-process.on('exit', () => {
-  browser.close();
-});
+bootstrap();
 
 // import child_process from 'child_process'
 // /^win/.test(process.platform) ? 'npx.cmd' : 'npx'

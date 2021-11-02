@@ -1,16 +1,16 @@
 {
+  "version": "0.1.0",
   "configurations": [
     {
-      "type": "chrome",
+      "type": "pwa-chrome",
       "request": "launch",
-      "name": "Debug in Chrome",
+      "name": "Launch Chrome",
       "url": "http://localhost:3000",
-      "webRoot": "${workspaceRoot}",
+      "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
-      "userDataDir": "${workspaceRoot}/.chrome",
       "runtimeArgs": [
         "--profile-directory=debug-profile"
       ]
-    },
+    }
   ]
 }
