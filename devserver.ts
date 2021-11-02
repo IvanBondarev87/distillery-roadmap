@@ -10,17 +10,20 @@ import puppeteer from 'puppeteer';
 import configureWebpack from './webpack.config';
 // import { WebpackDevMiddleware } from 'webpack-dev-middleware';
 
+global.isServerRendering = true;
+global.renderAppToHTML = null;
+
 async function bootstrap() {
 
-  const browser = await puppeteer.launch({
-    headless: false,
-    executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-    args: [
-      '--profile-directory=render-profile',
-    ],
-  });
-  const page = (await browser.pages())[0];
-  await page.setRequestInterception(true);
+  // const browser = await puppeteer.launch({
+  //   headless: false,
+  //   executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  //   args: [
+  //     '--profile-directory=render-profile',
+  //   ],
+  // });
+  // const page = (await browser.pages())[0];
+  // await page.setRequestInterception(true);
 
   process.env = {
     HOST: 'localhost',
@@ -44,14 +47,25 @@ async function bootstrap() {
 
   const compiler = webpack(webpackOptions);
 
-  page.on('request', request => {
-    if (request.resourceType() === 'document')
-      request.respond({
-        // @ts-expect-error
-        body: compiler.outputFileSystem.readFileSync(path.join(compiler.outputPath, 'index-raw.html')).toString(),
-      });
-    else
-      request.continue();
+  // page.on('request', request => {
+  //   if (request.resourceType() === 'document') {
+  //     const indexHTMLPath = path.join(compiler.outputPath, 'index-raw.html');
+  //     const indexHTMLFile = compiler.compilers[1].outputFileSystem.readFileSync(indexHTMLPath);
+  //     const html = indexHTMLFile.toString();
+  //     request.respond({
+  //       body: html,
+  //     });
+  //   } else
+  //     request.continue();
+  // });
+
+  compiler.compilers[1].hooks.afterEmit.tapAsync('SSRPlugin', (params, callback) => {
+    const ssrModulePath = path.join(compiler.outputPath, 'ssr-module.js');
+    // @ts-expect-error
+    const ssrModuleFile: Buffer = compiler.compilers[1].outputFileSystem.readFileSync(ssrModulePath);
+    const ssrModuleSrouce = ssrModuleFile.toString();
+    eval(ssrModuleSrouce);
+    callback();
   });
 
   const devServerOptions: DevServerOptions = {
@@ -64,11 +78,26 @@ async function bootstrap() {
     hot: true,
     onAfterSetupMiddleware: ({ app }) => {
       app.use(async (req, res, next) => {
+
         if (req.url === '/index.html') {
-          await page.goto('http://' + process.env.HOST + ':' + process.env.PORT + req.originalUrl, { waitUntil: 'domcontentloaded' });
-          const prerenderedHtml = await page.content();
-          res.send(prerenderedHtml);
+
+          const indexHTMLPath = path.join(compiler.outputPath, 'index-raw.html');
+          // @ts-expect-error
+          const indexHTMLFile: Buffer = compiler.compilers[0].outputFileSystem.readFileSync(indexHTMLPath);
+          const indexHTMLSrouce = indexHTMLFile.toString();
+
+          const { html, css } = global.renderAppToHTML(req.originalUrl);
+          let resHTML = indexHTMLSrouce.replace('<div id="main-container"></div>', '<div id="main-container">' + html + '</div>');
+          resHTML = resHTML.replace('<style id="server-styles"></style>', '<style id="server-styles">' + css + '</style>');
+          res.send(resHTML);
         }
+
+        // if (req.url === '/index.html') {
+        //   await page.goto('http://' + process.env.HOST + ':' + process.env.PORT + req.originalUrl, { waitUntil: 'domcontentloaded' });
+        //   const prerenderedHtml = await page.content();
+        //   res.send(prerenderedHtml);
+        // }
+
         next();
       });
     }
@@ -79,16 +108,6 @@ async function bootstrap() {
 };
 
 bootstrap();
-
-// import child_process from 'child_process'
-// /^win/.test(process.platform) ? 'npx.cmd' : 'npx'
-  // child_process.spawn('npx.cmd', ['ts-node', '--transpile-only', 'devserver.ts'], {
-  //   cwd: process.cwd(),
-  //   // detached : true,
-  //   stdio: 'inherit',
-  // })
-  //.unref();
-  // process.exit();
 
 // USING WEBPACK_DEV_MIDDLEWARE
 

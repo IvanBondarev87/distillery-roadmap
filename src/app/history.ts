@@ -6,6 +6,6 @@ declare global {
   }
 }
 
-const history = createBrowserHistory<LocationState>();
+const history = global.isServerRendering ? undefined : createBrowserHistory<LocationState>();
 
 export default history;

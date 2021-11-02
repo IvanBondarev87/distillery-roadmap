@@ -9,14 +9,17 @@ interface ConfigureOptions {
   getCustomTransformers?: TSLoaderOptions['getCustomTransformers']
   styleLoader?: string
   plugins?: WebpackOptions['plugins']
+  splitChunks?: boolean;
+  [key: string]: any;
 }
 
-function configureWebpack(options: ConfigureOptions): WebpackOptions {
+function configureWebpack(options: ConfigureOptions): WebpackOptions[] {
 
   const {
     production = false,
     getCustomTransformers,
     plugins = [],
+    styleLoader: _styleLoader = 'style-loader',
   } = options;
 
   const cssLoader = {
@@ -30,100 +33,179 @@ function configureWebpack(options: ConfigureOptions): WebpackOptions {
   };
 
   const styleLoader = {
-    loader: options.styleLoader,
+    loader: _styleLoader,
     options: {
       esModule: false,
     },
   };
 
-  return {
-    mode: production ? 'production' : 'development',
-    devtool: production ? undefined : 'source-map',
-    target: 'web',
+  return [
 
-    entry: './src/index.tsx',
+    {
+      mode: production ? 'production' : 'development',
+      devtool: production ? undefined : 'source-map',
+      target: 'web',
 
-    module: {
-      rules: [
-        {
-          test: /\.(js|jsx|ts|tsx)$/,
-          include: path.resolve(__dirname, './src'),
-          use: {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-              getCustomTransformers,
+      entry: './src/index.tsx',
+
+      module: {
+        rules: [
+          {
+            test: /\.(js|jsx|ts|tsx)$/,
+            include: path.resolve(__dirname, './src'),
+            use: {
+              loader: 'ts-loader',
+              options: {
+                transpileOnly: true,
+                getCustomTransformers,
+              },
+            },
+          },
+
+          {
+            test: /\.css$/,
+            use: [styleLoader, cssLoader],
+          },
+
+          {
+            test: /\.scss$/,
+            use: [styleLoader, cssLoader, 'sass-loader'],
+          },
+
+          {
+            test: /\.(png|svg|jpg|jpeg|gif)$/,
+            type: 'asset',
+          },
+        ],
+      },
+
+      resolve: {
+        modules: [path.resolve(__dirname, './src'), 'node_modules'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        fallback: {
+          path: require.resolve('path-browserify')
+        },
+      },
+
+      output: {
+        filename: 'js/[name].js',
+        path: path.resolve(__dirname, 'dist'),
+        publicPath: '/',
+      },
+
+      plugins: [
+        new HtmlWebpackPlugin({
+          template: './src/index.html',
+          title: process.env.APP_NAME,
+          filename: 'index-raw.html',
+        }),
+
+        new EnvironmentPlugin(process.env),
+
+        new ProvidePlugin({
+          ...tsProvide('./src/imports.d.ts'),
+        }),
+
+        // new CopyWebpackPlugin({
+        //   patterns: [{ from: 'public' }],
+        // }),
+
+        ...plugins,
+      ],
+
+      optimization: {
+        chunkIds: 'named',
+        splitChunks: {
+          chunks: 'async',
+          cacheGroups: {
+            vendors: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
             },
           },
         },
-
-        {
-          test: /\.css$/,
-          use: [styleLoader, cssLoader],
-        },
-
-        {
-          test: /\.scss$/,
-          use: [styleLoader, cssLoader, 'sass-loader'],
-        },
-
-        {
-          test: /\.(png|svg|jpg|jpeg|gif)$/,
-          type: 'asset',
-        },
-      ],
-    },
-
-    resolve: {
-      modules: [path.resolve(__dirname, './src'), 'node_modules'],
-      extensions: ['.js', '.jsx', '.ts', '.tsx'],
-      fallback: {
-        path: require.resolve('path-browserify')
       },
+
     },
 
-    output: {
-      filename: 'js/[name].js',
-      path: path.resolve(__dirname, 'dist'),
-      publicPath: '/',
-    },
+    {
+      mode: production ? 'production' : 'development',
+      devtool: production ? undefined : 'source-map',
+      target: 'node',
 
-    plugins: [
-      new HtmlWebpackPlugin({
-        template: './src/index.html',
-        title: process.env.APP_NAME,
-        filename: 'index-raw.html',
-        // scriptLoading: 'blocking',
-      }),
+      entry: './src/ssr-module.tsx',
 
-      new EnvironmentPlugin(process.env),
-
-      new ProvidePlugin({
-        ...tsProvide('./src/imports.d.ts'),
-      }),
-
-      // new CopyWebpackPlugin({
-      //   patterns: [{ from: 'public' }],
-      // }),
-
-      ...plugins,
-    ],
-
-    optimization: {
-      chunkIds: 'named',
-      splitChunks: {
-        chunks: 'async',
-        cacheGroups: {
-          vendors: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
+      module: {
+        rules: [
+          {
+            test: /\.(js|jsx|ts|tsx)$/,
+            include: path.resolve(__dirname, './src'),
+            use: {
+              loader: 'ts-loader',
+              options: {
+                transpileOnly: true,
+                getCustomTransformers,
+              },
+            },
           },
+
+          {
+            test: /\.css$/,
+            use: [styleLoader, cssLoader],
+          },
+
+          {
+            test: /\.scss$/,
+            use: [styleLoader, cssLoader, 'sass-loader'],
+          },
+
+          {
+            test: /\.(png|svg|jpg|jpeg|gif)$/,
+            type: 'asset',
+          },
+        ],
+      },
+
+      resolve: {
+        modules: [path.resolve(__dirname, './src'), 'node_modules'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        fallback: {
+          path: require.resolve('path-browserify')
         },
       },
-    },
 
-  };
+      output: {
+        filename: 'ssr-module.js',
+        path: path.resolve(__dirname, 'dist'),
+        library: {
+          type: 'commonjs',
+        },
+      },
+
+      plugins: [
+        new HtmlWebpackPlugin({
+          template: './src/index.html',
+          title: process.env.APP_NAME,
+          filename: 'index-raw1.html',
+        }),
+
+        new EnvironmentPlugin(process.env),
+
+        new ProvidePlugin({
+          ...tsProvide('./src/imports.d.ts'),
+        }),
+
+        // new CopyWebpackPlugin({
+        //   patterns: [{ from: 'public' }],
+        // }),
+
+        ...plugins,
+      ],
+
+    }
+
+  ];
 }
 
 export default configureWebpack;

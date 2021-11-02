@@ -11,3 +11,6 @@ type QueryParams = import('query-string').ParsedQuery<string | number | boolean>
 interface Window {
   prerendered: boolean
 }
+
+declare var renderAppToHTML: (location: string) => { html: string; css: string; };
+declare var isServerRendering: boolean;

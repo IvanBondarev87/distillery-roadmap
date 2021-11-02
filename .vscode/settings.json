@@ -1,12 +1,9 @@
 {
   "typescript.tsdk": "node_modules\\typescript\\lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
-
   "emmet.triggerExpansionOnTab": true,
-  
   // "eslint.format.enable": true,
   // "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  
   // "[javascript]": {
   //   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   // },
@@ -29,25 +26,28 @@
   //   "markdown",
   //   "json"
   // ],
-
   "explorer.autoReveal": false,
   "explorer.compactFolders": false,
-
   "files.exclude": {
     "node_modules": true,
     ".chrome": true,
   },
-
   "editor.tokenColorCustomizations": {
     "[Default Dark+]": {
       "textMateRules": [
         {
-          "scope": ["variable.other.constant", "variable.other.enummember"],
+          "scope": [
+            "variable.other.constant",
+            "variable.other.enummember"
+          ],
           "settings": {
-              "foreground": "#9cdcfe"
+            "foreground": "#9cdcfe"
           }
         }
       ]
     }
   },
+  "code-runner.executorMap": {
+    "typescript": "node -r ts-node/register",
+  }
 }
