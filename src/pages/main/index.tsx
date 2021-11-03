@@ -24,7 +24,7 @@ function FormExample({ onSubmit }: { onSubmit?: (values: Record<string, any>) =>
 
       <FlexBox spacing={1}>
         <TextField id="firstname" label="Firstname*" name="firstname" validate={validators.name} />
-        <TextField id="firstname" label="Lastname*" name="lastname" validate={validators.name} />
+        <TextField id="lastname" label="Lastname*" name="lastname" validate={validators.name} />
       </FlexBox>
 
       <br />

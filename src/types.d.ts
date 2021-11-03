@@ -9,7 +9,7 @@ type SelectOption = string | number | Record<string, any>;
 type QueryParams = import('query-string').ParsedQuery<string | number | boolean>;
 
 interface Window {
-  prerendered: boolean
+  isPrerendered: boolean
 }
 
 declare var renderAppToHTML: (location: string) => { html: string; css: string; };
