@@ -48,7 +48,7 @@ export const browserConfig: Configuration = {
 
   entry: {
     main: './src/bootstrap.tsx',
-    'main-ssr': './src/prerender.tsx',
+    'prerender': './src/prerender.tsx',
   },
 
   output: {
@@ -101,7 +101,7 @@ export const browserConfig: Configuration = {
       template: './src/index.html',
       title: process.env.APP_NAME,
       filename: 'index-raw.html',
-      excludeChunks: ['main-ssr'],
+      excludeChunks: ['prerender'],
     }),
     ...isDevelopmentMode && developmentPlugins,
     new EnvironmentPlugin(process.env),

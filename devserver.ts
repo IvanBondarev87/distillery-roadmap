@@ -1,9 +1,38 @@
 import fs from 'fs';
 import path from 'path';
+import http from 'http';
 import dotenv from 'dotenv';
 import webpack from 'webpack';
-import WebpackDevServer, { Configuration } from 'webpack-dev-server';
+import WebpackDevServer from 'webpack-dev-server';
 import puppeteer from 'puppeteer';
+
+function redirectPuppeteerFileRequest(puppeteerRequest: puppeteer.HTTPRequest, path: string) {
+
+  const { HOST: hostname, PORT: port } = process.env;
+  const req = http.request({
+    hostname, port,
+    method: 'GET',
+    path,
+    headers: puppeteerRequest.headers(),
+  }, res => {
+
+    const chunks = [];
+    res.on('data', chunk => {
+      chunks.push(chunk);
+    });
+
+    res.on('end', () => {
+      puppeteerRequest.respond({
+        status: res.statusCode,
+        body: Buffer.concat(chunks).toString(),
+        headers: { ...res.headers },
+      });
+    });
+
+  });
+
+  req.end();
+}
 
 process.env = {
   HOST: 'localhost',
@@ -26,40 +55,24 @@ async function bootstrap() {
     ],
   });
   const page = (await browser.pages())[0];
+
   await page.setRequestInterception(true);
-
-  const compiler = webpack(browserConfig);
-
   page.on('request', request => {
     const resourceType = request.resourceType();
     if (resourceType === 'document') {
-      // @ts-expect-error
-      const entryFile = compiler.outputFileSystem.readFileSync(
-        path.join(compiler.outputPath, 'index-raw.html')
-      );
-      const initialHTML = entryFile.toString();
-      request.respond({
-        body: initialHTML,
-      });
-    } else if (resourceType === 'script') {
-      const scriptName = request.url().split('/').pop();
-      if (scriptName === 'main.js') {
-        // @ts-expect-error
-        const ssrScript = compiler.outputFileSystem.readFileSync(
-          path.join(compiler.outputPath, 'js/main-ssr.js')
-        );
-        const ssrSource = ssrScript.toString();
-        request.respond({
-          body: ssrSource,
-        });
-      } else request.continue();
-    } else 
+      redirectPuppeteerFileRequest(request, '/index-raw.html');
+    } else if (resourceType === 'script' && request.url().split('/').pop() === 'main.js') {
+      redirectPuppeteerFileRequest(request, '/js/prerender.js');
+    } else {
       request.continue();
+    }
   });
 
-  const devServerOptions: Configuration = {
-    host: process.env.HOST,
-    port: process.env.PORT,
+  const compiler = webpack(browserConfig);
+
+  const { HOST: host, PORT: port } = process.env;
+  const devServerOptions: WebpackDevServer.Configuration = {
+    host, port,
     historyApiFallback: true,
     client: {
       progress: true,
