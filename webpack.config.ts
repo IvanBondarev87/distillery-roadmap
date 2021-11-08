@@ -127,16 +127,16 @@ export const browserConfig: Configuration = {
 
 };
 
-export const ssrConfig: Configuration = {
+export const nodeConfig: Configuration = {
 
   mode: isDevelopmentMode ? 'development' : 'production',
   devtool: isDevelopmentMode ? 'source-map' : undefined,
   target: 'node',
 
-  entry: './src/ssr-module.tsx',
+  entry: './src/prerender-node.tsx',
 
   output: {
-    filename: 'ssr-module.js',
+    filename: 'prerender-node.js',
     path: path.resolve(__dirname, 'dist'),
     library: {
       type: 'commonjs',

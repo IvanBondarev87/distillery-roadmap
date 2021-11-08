@@ -45,8 +45,6 @@ process.env = {
 
 async function bootstrap() {
 
-  const { browserConfig } = await import('./webpack.config');
-
   const browser = await puppeteer.launch({
     headless: false,
     executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
@@ -68,6 +66,7 @@ async function bootstrap() {
     }
   });
 
+  const { browserConfig } = await import('./webpack.config');
   const compiler = webpack(browserConfig);
 
   const { HOST: host, PORT: port } = process.env;

@@ -12,5 +12,5 @@ interface Window {
   isPrerendered: boolean
 }
 
-declare var renderAppToHTML: (location: string) => { html: string; css: string; };
+declare var renderAppToHTML: (html: string, location: string) => string;
 declare var isServerRendering: boolean;
