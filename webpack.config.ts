@@ -1,5 +1,5 @@
 import path from 'path';
-import { EnvironmentPlugin, ProvidePlugin, DefinePlugin, Configuration } from 'webpack';
+import { EnvironmentPlugin, ProvidePlugin, DefinePlugin, Configuration, HotModuleReplacementPlugin } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
@@ -48,7 +48,7 @@ export const browserConfig: Configuration = {
 
   entry: {
     main: './src/bootstrap.tsx',
-    'prerender': './src/prerender.tsx',
+    // 'prerender': './src/prerender.tsx',
   },
 
   output: {
@@ -182,6 +182,7 @@ export const nodeConfig: Configuration = {
   },
 
   plugins: [
+    new HotModuleReplacementPlugin(),
     new EnvironmentPlugin(process.env),
     new ProvidePlugin({ ...tsProvide('./src/imports.d.ts') }),
   ],

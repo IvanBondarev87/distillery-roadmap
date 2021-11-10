@@ -3,9 +3,19 @@ import path from 'path';
 import dotenv from 'dotenv';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
+import Module from 'module';
+import { createFsFromVolume, Volume, IFs } from "memfs";
+// import rfs from 'require-from-string';
 
 global.isServerRendering = true;
-global.renderAppToHTML = null;
+
+function readOutputFile(compiler: webpack.Compiler, filename: string) {
+  const outputPath = compiler.outputPath;
+  const outputFileSystem = compiler.outputFileSystem as IFs;
+  const pathToFile = path.join(outputPath, filename);
+  const fileBuffer = outputFileSystem.readFileSync(pathToFile) as Buffer;
+  return fileBuffer.toString();
+}
 
 process.env = {
   HOST: 'localhost',
@@ -16,21 +26,78 @@ process.env = {
   ...process.env,
 };
 
+let initialFiles: string[] = [];
+let mainModule: Module = null;
+let lastModuleName: string = null;
+let lastManifest: string = null;
+
+const originalResolve = Module._resolveFilename;
+Module._resolveFilename = function mockedFilenameResolver(request, parent) {
+  if (request === lastModuleName) {
+    return lastModuleName;
+  }
+  return originalResolve(request, parent);
+};
+
 async function bootstrap() {
 
   const { browserConfig, nodeConfig } = await import('./webpack.config');
-  const compiler = webpack([browserConfig, nodeConfig]);
+  const compiler = webpack(browserConfig);
 
-  compiler.compilers[1].hooks.afterEmit.tapAsync('PrerenderPlugin', (params, callback) => {
-    // if (global.renderAppToHTML == null) {
-      const prerenderPath = path.join(compiler.outputPath, 'prerender-node.js');
-      // @ts-expect-error
-      const prerenderFile: Buffer = compiler.compilers[1].outputFileSystem.readFileSync(prerenderPath);
-      const prerenderSource = prerenderFile.toString();
-      console.log('reeval')
-      eval(prerenderSource);
-    // }
-    callback();
+  const compiler1 = webpack(nodeConfig);
+  const fss = createFsFromVolume(new Volume());
+  compiler1.outputFileSystem = fss;
+
+  compiler1.watch({}, (error: Error, serverStats: webpack.Stats) => {
+    if (mainModule === null) {
+
+      const prerenderSrc = readOutputFile(compiler1, 'prerender-node.js');
+
+      const moduleName = 'render-module';
+      mainModule = new Module(moduleName);
+      mainModule._compile(prerenderSrc, moduleName);
+
+      mainModule.exports._webpack_require_.hmrM = () => lastManifest;
+
+      compiler1.outputFileSystem.readdir(compiler1.outputPath, (_, files) => {
+        initialFiles = files as string[];
+      });
+
+    } else {
+
+      compiler1.outputFileSystem.readdir(compiler1.outputPath, (_, files) => {
+
+        const newFiles = (files as string[]).filter(f => !initialFiles.includes(f));
+
+        const manifestFileName = newFiles.filter(f => f.split('.').pop() === 'json')[0];
+        const manifestFile = readOutputFile(compiler1, manifestFileName);
+        lastManifest = JSON.parse(manifestFile);
+
+        const updateFileName = newFiles.filter(f => f.split('.').pop() === 'js')[0];
+        const updateFile = readOutputFile(compiler1, updateFileName);
+        const moduleName = './' + updateFileName;
+        const updateModule = new Module(moduleName);
+        updateModule._compile(updateFile, moduleName);
+        updateModule.filename = moduleName;
+        require.cache[moduleName] = updateModule;
+        lastModuleName = moduleName;
+
+        initialFiles = files as string[];
+        // mainModule.exports.__updateModules__();
+
+        mainModule.exports.hot.check(true)
+          .then(() => {
+            const mm = mainModule.exports._webpack_require_('./src/prerender-node.tsx');
+            mainModule.exports.renderer.renderAppToHTML = mm.renderer.renderAppToHTML;
+          })
+          .catch((error) => {
+            console.log('error:', error);
+          });
+
+      });
+
+    }
+
   });
 
   const { HOST: host, PORT: port } = process.env;
@@ -45,13 +112,8 @@ async function bootstrap() {
       app.use(async (req, res, next) => {
 
         if (req.url === '/index.html') {
-
-          const indexHTMLPath = path.join(compiler.outputPath, 'index-raw.html');
-          // @ts-expect-error
-          const indexHTMLFile: Buffer = compiler.compilers[0].outputFileSystem.readFileSync(indexHTMLPath);
-          const html = indexHTMLFile.toString();
-
-          const prerenderedHTML = global.renderAppToHTML(html, req.originalUrl);
+          const html = readOutputFile(compiler, 'index-raw.html');
+          const prerenderedHTML = mainModule.exports.renderer.renderAppToHTML(html, req.originalUrl);
           res.send(prerenderedHTML);
         }
 

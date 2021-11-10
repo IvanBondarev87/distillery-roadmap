@@ -16,7 +16,8 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-query": "^3.26.0",
-    "react-router-dom": "^5.3.0"
+    "react-router-dom": "^5.3.0",
+    "require-from-string": "^2.0.2"
   },
   "scripts": {
     "start": "node devServer.js",
@@ -65,9 +66,9 @@
     "type-fest": "^1.2.0",
     "typescript": "^4.4.4",
     "typescript-plugin-css-modules": "^3.4.0",
-    "webpack": "^5.58.2",
-    "webpack-cli": "^4.9.0",
-    "webpack-dev-server": "^4.3.1",
+    "webpack": "^5.63.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.4.0",
     "webpack-hot-middleware": "^2.25.1"
   }
 }
