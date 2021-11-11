@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import Module from 'module';
-import { createFsFromVolume, Volume, IFs } from "memfs";
+import { createFsFromVolume, Volume, IFs } from 'memfs';
 
 let newModuleNameList: string[] = [];
 // @ts-expect-error
@@ -18,6 +18,7 @@ Module._resolveFilename = function mockedFilenameResolver(request, parent) {
 };
 function createModuleFromString(src: string, name: string) {
   const _module = new Module(name);
+  _module.paths = [..._module.paths ?? [], ...module.paths ?? []];
   // @ts-expect-error
   _module._compile(src, name);
   _module.filename = name;
@@ -64,7 +65,9 @@ async function bootstrap() {
   renderCompiler.outputFileSystem = createFsFromVolume(new Volume());
   const createRenderModule = () => {
     const renderSrc = readCompilerOutputFile(renderCompiler, 'prerender-node.js');
-    const rm = createModuleFromString(renderSrc, 'render-module');
+    const rm = createModuleFromString(renderSrc, 'render-module.js');
+    // const renderSrcMap = readCompilerOutputFile(renderCompiler, 'prerender-node.js.map');
+    // createModuleFromString(renderSrcMap, './prerender-node.js.map');
     return rm;
   };
   renderCompiler.watch({}, async (error: Error, stats: webpack.Stats) => {

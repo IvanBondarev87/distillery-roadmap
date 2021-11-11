@@ -4,6 +4,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import ReactRefreshTypeScript from 'react-refresh-typescript';
+import nodeExternals from 'webpack-node-externals';
 const tsProvide = require('./ts-provide');
 
 const isDevelopmentMode = process.env.NODE_ENV !== 'production';
@@ -181,6 +182,8 @@ export const nodeConfig: Configuration = {
       path: require.resolve('path-browserify')
     },
   },
+
+  externals: [nodeExternals()],
 
   plugins: [
     new HotModuleReplacementPlugin(),
