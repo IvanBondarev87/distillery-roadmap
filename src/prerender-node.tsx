@@ -10,30 +10,17 @@ if (module.hot) {
   module.hot.accept();
 }
 
-export const renderer = {
-  renderAppToHTML: (html: string, location: string) => {
+export function renderAppToHTML(html: string, location: string) {
 
-    const sheets = new ServerStyleSheets();
-    const collectedStyleSheets = sheets.collect(
-      <AppProvider location={location}>
-        <Routing />
-      </AppProvider>
-    );
-    const mainContainer = renderToString(collectedStyleSheets);
-    const styleSheets = sheets.toString();
-    let prerenderedHTML = html.replace('<div id="main-container"></div>', '<div id="main-container">' + mainContainer + '</div>');
-    prerenderedHTML = prerenderedHTML.replace('<!-- inject -->', '<style id="server-styles">' + styleSheets + '</style>');
-    return prerenderedHTML;
-  }
-};
-
-// export const __updateModules__ = () => {
-//   hot.check(true)
-//     .then((outdatedModules) => {
-//       const mainModule = __webpack_require__('./src/prerender-node.tsx');
-//       renderer.renderAppToHTML = mainModule.renderer.renderAppToHTML;
-//     })
-//     .catch((error) => {
-//       console.log('error:', error);
-//     });
-// }
+  const sheets = new ServerStyleSheets();
+  const collectedStyleSheets = sheets.collect(
+    <AppProvider location={location}>
+      <Routing />
+    </AppProvider>
+  );
+  const mainContainer = renderToString(collectedStyleSheets);
+  const styleSheets = sheets.toString();
+  let prerenderedHTML = html.replace('<div id="main-container"></div>', '<div id="main-container">' + mainContainer + '</div>');
+  prerenderedHTML = prerenderedHTML.replace('<!-- inject -->', '<style id="server-styles">' + styleSheets + '</style>');
+  return prerenderedHTML;
+}

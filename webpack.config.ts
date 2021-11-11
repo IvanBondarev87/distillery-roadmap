@@ -106,6 +106,7 @@ export const browserConfig: Configuration = {
     ...isDevelopmentMode && developmentPlugins,
     new EnvironmentPlugin(process.env),
     new ProvidePlugin({ ...tsProvide('./src/imports.d.ts') }),
+    new DefinePlugin({ isServerRendering: false })
     // new CopyWebpackPlugin({
     //   patterns: [{ from: 'public' }],
     // }),
@@ -185,6 +186,7 @@ export const nodeConfig: Configuration = {
     new HotModuleReplacementPlugin(),
     new EnvironmentPlugin(process.env),
     new ProvidePlugin({ ...tsProvide('./src/imports.d.ts') }),
+    new DefinePlugin({ isServerRendering: true })
   ],
 
 };

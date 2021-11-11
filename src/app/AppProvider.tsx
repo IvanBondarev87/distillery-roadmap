@@ -27,8 +27,8 @@ function AppProvider({ children, location }: AppProviderProps) {
     </StylesProvider>
   );
 
-  if (global.isServerRendering) return (
-    <StaticRouter location={global.location}>
+  if (isServerRendering) return (
+    <StaticRouter location={location}>
       {inner}
     </StaticRouter>
   );
