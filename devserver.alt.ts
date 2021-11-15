@@ -3,29 +3,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
-import Module from 'module';
 import { createFsFromVolume, Volume, IFs } from 'memfs';
-
-let newModuleNameList: string[] = [];
-// @ts-expect-error
-const originalResolve = Module._resolveFilename;
-// @ts-expect-error
-Module._resolveFilename = function mockedFilenameResolver(request, parent) {
-  if (newModuleNameList.includes(request)) {
-    return request;
-  }
-  return originalResolve(request, parent);
-};
-function createModuleFromString(src: string, name: string) {
-  const _module = new Module(name);
-  _module.paths = [..._module.paths ?? [], ...module.paths ?? []];
-  // @ts-expect-error
-  _module._compile(src, name);
-  _module.filename = name;
-  require.cache[name] = _module;
-  newModuleNameList.push(name);
-  return _module.exports;
-}
+import createModuleFromString from './require-vm';
 
 function readCompilerOutputFile(compiler: webpack.Compiler, filename: string) {
   const outputPath = compiler.outputPath;
@@ -65,12 +44,11 @@ async function bootstrap() {
   renderCompiler.outputFileSystem = createFsFromVolume(new Volume());
   const createRenderModule = () => {
     const renderSrc = readCompilerOutputFile(renderCompiler, 'prerender-node.js');
-    const rm = createModuleFromString(renderSrc, 'render-module.js');
-    // const renderSrcMap = readCompilerOutputFile(renderCompiler, 'prerender-node.js.map');
-    // createModuleFromString(renderSrcMap, './prerender-node.js.map');
+    const renderSrcMap = readCompilerOutputFile(renderCompiler, 'prerender-node.js.map');
+    const rm = createModuleFromString(renderSrc, 'render-module.js', renderSrcMap);
     return rm;
   };
-  renderCompiler.watch({}, async (error: Error, stats: webpack.Stats) => {
+  renderCompiler.watch({}, async (error, stats) => {
 
     const { errors } = stats.toJson({ errors: true });
     const hasErrors = errors?.length > 0;
@@ -100,7 +78,8 @@ async function bootstrap() {
         const updaterFileNameList = newFiles.filter(f => f.split('.').pop() === 'js' && f.includes(hash));
         for (const updaterFileName of updaterFileNameList) {
           const updaterSrc = readCompilerOutputFile(renderCompiler, updaterFileName);
-          createModuleFromString(updaterSrc, './' + updaterFileName);
+          const updaterSrcMap = readCompilerOutputFile(renderCompiler, updaterFileName + '.map');
+          createModuleFromString(updaterSrc, './' + updaterFileName, updaterSrcMap);
         }
 
         const { hot } = renderModule;
@@ -109,7 +88,7 @@ async function bootstrap() {
           const updatedModules: string[] = await hot.check(true);
 
           if (updatedModules?.length > 0) {
-            renderModule = renderModule._webpack_require_('./src/prerender-node.tsx');
+            renderModule.renderAppToHTML = renderModule._webpack_require_('./src/prerender-node.tsx').renderAppToHTML;
             console.log('Updated modules:');
             updatedModules.forEach(moduleId => console.log(` - ${moduleId}`));
             console.log('Update applied.');

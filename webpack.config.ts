@@ -136,6 +136,10 @@ export const nodeConfig: Configuration = {
   target: 'node',
 
   entry: './src/prerender-node.tsx',
+  // entry: [
+  //   './hot-updater',
+  //   './src/prerender-node.tsx'
+  // ],
 
   output: {
     filename: 'prerender-node.js',

@@ -12,6 +12,8 @@ if (module.hot) {
 
 export function renderAppToHTML(html: string, location: string) {
 
+  throw new Error('asd123');
+
   const sheets = new ServerStyleSheets();
   const collectedStyleSheets = sheets.collect(
     <AppProvider location={location}>
