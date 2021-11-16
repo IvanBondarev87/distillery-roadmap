@@ -2,7 +2,7 @@ import Module from 'module';
 import { runInThisContext } from 'vm';
 import sourceMapSupport from 'source-map-support';
 import { RawSourceMap } from 'source-map';
-import pjson from './package.json';
+import pjson from '../package.json';
 
 const sourceMapList = new Map<string, RawSourceMap>();
 const replacer: any = `webpack://${pjson.name}/`;
@@ -26,7 +26,7 @@ function _require(id: string) {
   return require(id);
 }
 
-function requireFromString<T>(code: string, id: string, sourceMap?: string) {
+function requireFromString<T = any>(code: string, id: string, sourceMap?: string) {
   const _module = new Module(id);
   cache[id] = _module;
   const wrappedCode = Module.wrap(code);

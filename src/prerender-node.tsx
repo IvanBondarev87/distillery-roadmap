@@ -2,17 +2,16 @@ import { renderToString } from 'react-dom/server';
 import AppProvider from 'app/AppProvider';
 import Routing from 'routing';
 import { ServerStyleSheets } from '@material-ui/core/styles';
+import './hot-updater';
 
-export const { hot } = module;
-export const _webpack_require_ = __webpack_require__;
+// export const { hot } = module;
+// export const _webpack_require_ = __webpack_require__;
 
 if (module.hot) {
   module.hot.accept();
 }
 
 export function renderAppToHTML(html: string, location: string) {
-
-  throw new Error('asd123');
 
   const sheets = new ServerStyleSheets();
   const collectedStyleSheets = sheets.collect(

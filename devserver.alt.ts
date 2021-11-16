@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import { createFsFromVolume, Volume, IFs } from 'memfs';
-import createModuleFromString from './require-vm';
+import createModuleFromString from './utils/require-from-string';
+import eventEmitter from 'webpack/hot/emitter';
 
 function readCompilerOutputFile(compiler: webpack.Compiler, filename: string) {
   const outputPath = compiler.outputPath;
@@ -31,9 +32,8 @@ process.env = {
 };
 
 let lastFileNameList: string[] = [];
-let currentManifest: any = null;
-let renderModule: any = null;
 let lastBuildWithErrors = false;
+let prerender: (...args: any[]) => string = null;
 
 async function bootstrap() {
 
@@ -42,11 +42,11 @@ async function bootstrap() {
 
   const renderCompiler = webpack(nodeConfig);
   renderCompiler.outputFileSystem = createFsFromVolume(new Volume());
-  const createRenderModule = () => {
+  const compilePrerenderFn = () => {
     const renderSrc = readCompilerOutputFile(renderCompiler, 'prerender-node.js');
     const renderSrcMap = readCompilerOutputFile(renderCompiler, 'prerender-node.js.map');
     const rm = createModuleFromString(renderSrc, 'render-module.js', renderSrcMap);
-    return rm;
+    return rm.renderAppToHTML;
   };
   renderCompiler.watch({}, async (error, stats) => {
 
@@ -57,10 +57,9 @@ async function bootstrap() {
       return;
     };
 
-    if (renderModule === null || lastBuildWithErrors) {
+    if (prerender === null || lastBuildWithErrors) {
 
-      renderModule = createRenderModule();
-      renderModule._webpack_require_.hmrM = () => currentManifest;
+      prerender = compilePrerenderFn();
       lastBuildWithErrors = false;
 
     } else {
@@ -72,7 +71,7 @@ async function bootstrap() {
       for (const manifestFileName of manifestFileNameList) {
 
         const manifestSrc = readCompilerOutputFile(renderCompiler, manifestFileName);
-        currentManifest = JSON.parse(manifestSrc);
+        const manifest = JSON.parse(manifestSrc);
         const hash = manifestFileName.split('.').slice(-3)[0];
 
         const updaterFileNameList = newFiles.filter(f => f.split('.').pop() === 'js' && f.includes(hash));
@@ -82,30 +81,15 @@ async function bootstrap() {
           createModuleFromString(updaterSrc, './' + updaterFileName, updaterSrcMap);
         }
 
-        const { hot } = renderModule;
-        const status = hot.status();
-        if (status === 'idle') try {
-          const updatedModules: string[] = await hot.check(true);
-
-          if (updatedModules?.length > 0) {
-            renderModule.renderAppToHTML = renderModule._webpack_require_('./src/prerender-node.tsx').renderAppToHTML;
-            console.log('Updated modules:');
-            updatedModules.forEach(moduleId => console.log(` - ${moduleId}`));
-            console.log('Update applied.');
-          } else {
-            console.warn('Cannot find update.');
-          }
-
-        } catch (err) {
-
-          if (['abort', 'fail'].includes(hot.status())) {
-            console.warn(`Cannot apply update. ${err}`);
-          } else {
-            console.error('Update failed.', err);
-          }
-          renderModule = createRenderModule();
-
-        }
+        eventEmitter.emit('update', {
+          manifest,
+          onSuccess: (prerenderFn) => {
+            prerender = prerenderFn;
+          },
+          onError: () => {
+            prerender = compilePrerenderFn();
+          },
+        });
 
       }
 
@@ -128,7 +112,7 @@ async function bootstrap() {
 
         if (req.url === '/index.html') {
           const html = readCompilerOutputFile(compiler, 'index-raw.html');
-          const prerenderedHTML = renderModule.renderAppToHTML(html, req.originalUrl);
+          const prerenderedHTML = prerender?.(html, req.originalUrl);
           res.send(prerenderedHTML);
         }
 

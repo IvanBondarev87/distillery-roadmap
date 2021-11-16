@@ -137,7 +137,7 @@ export const nodeConfig: Configuration = {
 
   entry: './src/prerender-node.tsx',
   // entry: [
-  //   './hot-updater',
+  //   './utils/hot-updater.ts',
   //   './src/prerender-node.tsx'
   // ],
 
