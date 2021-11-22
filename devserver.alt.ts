@@ -3,24 +3,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
-import { createFsFromVolume, Volume, IFs } from 'memfs';
-import createModuleFromString from './utils/require-from-string';
-import eventEmitter from 'webpack/hot/emitter';
-
-function readCompilerOutputFile(compiler: webpack.Compiler, filename: string) {
-  const outputPath = compiler.outputPath;
-  const outputFileSystem = compiler.outputFileSystem as IFs;
-  const pathToFile = path.join(outputPath, filename);
-  const fileBuffer = outputFileSystem.readFileSync(pathToFile) as Buffer;
-  return fileBuffer.toString();
-}
-function readCompilerOutputFilenameList(compiler: webpack.Compiler) {
-  return new Promise<string[]>(resolve => {
-    compiler.outputFileSystem.readdir(compiler.outputPath, (_, files) => {
-      resolve(files as string[]);
-    });
-  });
-}
+import { RequestHandler } from 'express';
+import { WebpackOutput, listFiles } from './dev-toolkit';
 
 process.env = {
   HOST: 'localhost',
@@ -31,73 +15,32 @@ process.env = {
   ...process.env,
 };
 
-let lastFileNameList: string[] = [];
-let lastBuildWithErrors = false;
-let prerender: (...args: any[]) => string = null;
-
 async function bootstrap() {
 
-  const { browserConfig, nodeConfig } = await import('./webpack.config');
+  const { browserConfig, serverConfig } = await import('./webpack.config');
   const compiler = webpack(browserConfig);
 
-  const renderCompiler = webpack(nodeConfig);
-  renderCompiler.outputFileSystem = createFsFromVolume(new Volume());
-  const compilePrerenderFn = () => {
-    const renderSrc = readCompilerOutputFile(renderCompiler, 'prerender-node.js');
-    const renderSrcMap = readCompilerOutputFile(renderCompiler, 'prerender-node.js.map');
-    const rm = createModuleFromString(renderSrc, 'render-module.js', renderSrcMap);
-    return rm.renderAppToHTML;
-  };
-  renderCompiler.watch({}, async (error, stats) => {
-
-    const { errors } = stats.toJson({ errors: true });
-    const hasErrors = errors?.length > 0;
-    if (hasErrors) {
-      lastBuildWithErrors = true;
-      return;
-    };
-
-    if (prerender === null || lastBuildWithErrors) {
-
-      prerender = compilePrerenderFn();
-      lastBuildWithErrors = false;
-
-    } else {
-
-      const files = await readCompilerOutputFilenameList(renderCompiler);
-      const newFiles = files.filter(f => !lastFileNameList.includes(f));
-
-      const manifestFileNameList = newFiles.filter(f => f.split('.').pop() === 'json');
-      for (const manifestFileName of manifestFileNameList) {
-
-        const manifestSrc = readCompilerOutputFile(renderCompiler, manifestFileName);
-        const manifest = JSON.parse(manifestSrc);
-        const hash = manifestFileName.split('.').slice(-3)[0];
-
-        const updaterFileNameList = newFiles.filter(f => f.split('.').pop() === 'js' && f.includes(hash));
-        for (const updaterFileName of updaterFileNameList) {
-          const updaterSrc = readCompilerOutputFile(renderCompiler, updaterFileName);
-          const updaterSrcMap = readCompilerOutputFile(renderCompiler, updaterFileName + '.map');
-          createModuleFromString(updaterSrc, './' + updaterFileName, updaterSrcMap);
-        }
-
-        eventEmitter.emit('update', {
-          manifest,
-          onSuccess: (prerenderFn) => {
-            prerender = prerenderFn;
-          },
-          onError: () => {
-            prerender = compilePrerenderFn();
-          },
-        });
-
-      }
-
-    }
-
-    lastFileNameList = await readCompilerOutputFilenameList(renderCompiler);
-
+  let chunks: string[] = null;
+  compiler.hooks.afterEmit.tap('SSR', () => {
+    if (chunks !== null) return;
+    chunks = listFiles(compiler)
+      .filter(filename => path.extname(filename) === '.js')
+      .reverse();
   });
+
+  const ssr = new WebpackOutput(serverConfig);
+
+  const ssrMiddleware: RequestHandler = async (req, res, next) => {
+    if (req.url === '/index.html') {
+      try {
+        const html = ssr.main?.prerender?.(chunks, req.originalUrl);
+        res.send(html);
+      } catch (err) {
+        return next(err);
+      }
+    }
+    next();
+  };
 
   const { HOST: host, PORT: port } = process.env;
   const devServerOptions: WebpackDevServer.Configuration = {
@@ -108,16 +51,7 @@ async function bootstrap() {
     },
     hot: true,
     onAfterSetupMiddleware: ({ app }) => {
-      app.use(async (req, res, next) => {
-
-        if (req.url === '/index.html') {
-          const html = readCompilerOutputFile(compiler, 'index-raw.html');
-          const prerenderedHTML = prerender?.(html, req.originalUrl);
-          res.send(prerenderedHTML);
-        }
-
-        next();
-      });
+      app.use(ssrMiddleware);
     }
   };
 

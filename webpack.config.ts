@@ -4,7 +4,6 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import ReactRefreshTypeScript from 'react-refresh-typescript';
-import nodeExternals from 'webpack-node-externals';
 const tsProvide = require('./ts-provide');
 
 const isDevelopmentMode = process.env.NODE_ENV !== 'production';
@@ -102,7 +101,7 @@ export const browserConfig: Configuration = {
       template: './src/index.html',
       title: process.env.APP_NAME,
       filename: 'index-raw.html',
-      excludeChunks: ['prerender'],
+      // excludeChunks: ['prerender'],
     }),
     ...isDevelopmentMode && developmentPlugins,
     new EnvironmentPlugin(process.env),
@@ -129,20 +128,16 @@ export const browserConfig: Configuration = {
 
 };
 
-export const nodeConfig: Configuration = {
+export const serverConfig: Configuration = {
 
   mode: isDevelopmentMode ? 'development' : 'production',
   devtool: isDevelopmentMode ? 'source-map' : undefined,
   target: 'node',
 
   entry: './src/prerender-node.tsx',
-  // entry: [
-  //   './utils/hot-updater.ts',
-  //   './src/prerender-node.tsx'
-  // ],
 
   output: {
-    filename: 'prerender-node.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
     library: {
       type: 'commonjs',
@@ -153,7 +148,7 @@ export const nodeConfig: Configuration = {
     rules: [
       {
         test: /\.(js|jsx|ts|tsx)$/,
-        include: path.resolve(__dirname, './src'),
+        include: [path.resolve(__dirname, './src'), path.resolve(__dirname, './dev-toolkit')],
         use: {
           loader: 'ts-loader',
           options: {
@@ -187,10 +182,7 @@ export const nodeConfig: Configuration = {
     },
   },
 
-  externals: [nodeExternals()],
-
   plugins: [
-    new HotModuleReplacementPlugin(),
     new EnvironmentPlugin(process.env),
     new ProvidePlugin({ ...tsProvide('./src/imports.d.ts') }),
     new DefinePlugin({ isServerRendering: true })
